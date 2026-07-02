@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tokens: The Currency Your AI Runs On</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* page surface — clean paper */
+    --paper:#ffffff;
+    --panel:#f7f4ec;
+    --panel-2:#f0ebdd;
+    --ink:#1b1f27;
+    --ink-dim:#5c6270;
+    --line: rgba(27,31,39,0.14);
+
+    /* dark "instrument" surface — meter, tank, odometer, savings readout */
+    --gauge:#14181f;
+    --gauge-text:#f2eee4;
+    --gauge-text-dim:#8b93a1;
+    --gauge-line: rgba(242,238,228,0.16);
+
+    /* accents */
+    --copper:#b5652f;
+    --amber:#e7a93d;
+    --signal:#4fcb93;
+    --rust:#e2705a;
+    --dusk:#4c6a85;
+
+    --display: 'Fraunces', serif;
+    --body-f: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--body-f);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--copper); color:#fff; }
+  a{ color:var(--copper); }
+  :focus-visible{ outline:2px solid var(--copper); outline-offset:3px; }
+
+  h1,h2,h3{ font-family:var(--display); font-weight:600; margin:0; color:var(--ink); }
+  .eyebrow{
+    font-family:var(--mono); font-size:0.75rem; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--copper); margin:0 0 0.9rem 0; display:flex; align-items:center; gap:0.6rem;
+  }
+  .eyebrow::before{ content:''; width:22px; height:1px; background:var(--copper); display:inline-block; }
+
+  .example-tag{
+    font-family:var(--body-f); font-size:0.68rem; letter-spacing:0.03em; text-transform:none; font-weight:600;
+    padding:0.15rem 0.55rem; border-radius:20px; color:#fff; background:var(--dusk); margin-left:0.6rem;
+  }
+
+  .slider-guidance{
+    font-size:0.8rem; color:var(--ink-dim); margin-top:0.35rem; line-height:1.45;
+  }
+  .slider-guidance b{ color:var(--ink); font-weight:600; }
+
+  main{ max-width:920px; margin:0 auto; padding:0 1.5rem; }
+  section{ padding:5rem 0; border-bottom:1px solid var(--line); }
+  section:last-of-type{ border-bottom:none; }
+
+  /* ---------- hero ---------- */
+  .hero{ padding-top:4.5rem; }
+  .hero h1{
+    font-size:clamp(2.1rem, 5vw, 3.3rem); line-height:1.08; max-width:14ch;
+    margin-bottom:1.1rem;
+  }
+  .hero .sub{ color:var(--ink-dim); max-width:52ch; font-size:1.08rem; margin-bottom:2.4rem; }
+
+  .demo-box{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:1.5rem; margin-bottom:1rem;
+  }
+  .demo-box label{ font-family:var(--mono); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-dim); display:block; margin-bottom:0.6rem; }
+  textarea#heroInput{
+    width:100%; min-height:88px; resize:vertical;
+    background:var(--gauge); color:var(--gauge-text); border:1px solid var(--gauge-line); border-radius:6px;
+    padding:0.8rem; font-family:var(--body-f); font-size:1rem; line-height:1.5;
+  }
+  .chip-field{
+    margin-top:1rem; display:flex; flex-wrap:wrap; gap:0.35rem; min-height:2.4rem;
+  }
+  .token-chip{
+    font-family:var(--mono); font-size:0.8rem; padding:0.18rem 0.5rem; border-radius:4px;
+    font-weight:600; line-height:1.6;
+  }
+  .tk-c0{ background:var(--copper); color:#fff; }
+  .tk-c1{ background:var(--amber); color:var(--ink); }
+  .tk-c2{ background:var(--signal); color:var(--ink); }
+  .tk-c3{ background:var(--dusk); color:#fff; }
+
+  .demo-stats{ display:flex; gap:1.6rem; flex-wrap:wrap; margin-top:1.1rem; font-family:var(--mono); font-size:0.85rem; }
+  .demo-stats b{ color:var(--copper); font-size:1.05rem; }
+  .caption{ font-size:0.82rem; color:var(--ink-dim); margin-top:0.8rem; }
+
+  /* ---------- stat row ---------- */
+  .stat-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:2rem; }
+  .stat-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:1.3rem;
+  }
+  .stat-card .num{ font-family:var(--mono); color:var(--copper); font-size:1.6rem; font-weight:600; display:block; margin-bottom:0.3rem; }
+  .stat-card .lbl{ color:var(--ink-dim); font-size:0.88rem; }
+
+  p.lede{ color:var(--ink-dim); max-width:60ch; font-size:1.03rem; }
+
+  /* ---------- where tokens get used: input vs output ---------- */
+  .io-split{ display:grid; grid-template-columns:1fr 1fr; gap:1.1rem; margin-top:2rem; }
+  .io-panel{ border-radius:10px; padding:1.4rem 1.5rem; border:1px solid var(--line); }
+  .io-panel.in{ background:var(--panel); }
+  .io-panel.out{ background:var(--gauge); border-color:var(--gauge-line); }
+  .io-tag{ font-family:var(--mono); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.7rem; display:flex; align-items:center; gap:0.5rem; }
+  .io-panel.in .io-tag{ color:var(--copper); }
+  .io-panel.out .io-tag{ color:var(--amber); }
+  .io-panel h3{ font-family:var(--display); font-size:1.25rem; margin-bottom:0.6rem; }
+  .io-panel.out h3{ color:var(--gauge-text); }
+  .io-panel p{ font-size:0.92rem; margin:0; }
+  .io-panel.in p{ color:var(--ink-dim); }
+  .io-panel.out p{ color:var(--gauge-text-dim); }
+  .io-panel .price-flag{
+    display:inline-block; margin-top:0.9rem; font-family:var(--mono); font-size:0.8rem; font-weight:600;
+    padding:0.25rem 0.6rem; border-radius:4px;
+  }
+  .io-panel.in .price-flag{ background:rgba(181,101,47,0.12); color:var(--copper); }
+  .io-panel.out .price-flag{ background:rgba(231,169,61,0.16); color:var(--amber); }
+
+  .io-callout{
+    margin-top:1.3rem; background:var(--panel-2); border:1px solid var(--line); border-left:3px solid var(--amber);
+    border-radius:8px; padding:1.1rem 1.3rem; display:flex; align-items:baseline; gap:1rem; flex-wrap:wrap;
+  }
+  .io-callout .big{ font-family:var(--mono); font-size:1.7rem; font-weight:600; color:var(--copper); line-height:1; }
+  .io-callout .txt{ font-size:0.95rem; color:var(--ink); flex:1; min-width:220px; }
+
+  /* ---------- tank ---------- */
+  .controls-row{ display:flex; flex-wrap:wrap; gap:2rem; align-items:flex-end; margin:1.8rem 0 2rem; }
+  .control{ display:flex; flex-direction:column; gap:0.5rem; min-width:220px; flex:1; }
+  .control label{ font-family:var(--mono); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-dim); }
+  .control .val{ color:var(--copper); font-weight:600; }
+  input[type="range"]{
+    -webkit-appearance:none; width:100%; height:4px; background:var(--line); border-radius:2px; outline:none;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--copper);
+    border:2px solid #fff; box-shadow:0 0 0 1px var(--line); cursor:pointer;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:16px; height:16px; border-radius:50%; background:var(--copper); border:2px solid #fff; cursor:pointer;
+  }
+  .check-row{ display:flex; align-items:center; gap:0.6rem; font-size:0.92rem; color:var(--ink-dim); }
+  .check-row input{ width:16px; height:16px; accent-color:var(--copper); }
+
+  select{
+    font-family:var(--body-f); font-size:0.95rem; color:var(--ink); background:var(--paper);
+    border:1px solid var(--line); border-radius:6px; padding:0.55rem 0.7rem; width:100%;
+  }
+  optgroup{ font-family:var(--mono); font-size:0.8rem; }
+
+  /* ---------- cost calc ---------- */
+  .calc-grid{ display:grid; grid-template-columns:1fr 1fr; gap:2rem 2.4rem; margin-top:1.8rem; }
+  .rate-input{
+    display:flex; align-items:center; gap:0.5rem; background:var(--gauge); border:1px solid var(--gauge-line);
+    border-radius:6px; padding:0.4rem 0.7rem; width:fit-content;
+  }
+  .rate-input span{ color:var(--gauge-text-dim); font-family:var(--mono); font-size:0.85rem; }
+  .rate-input input{
+    width:80px; background:transparent; border:none; color:var(--gauge-text); font-family:var(--mono);
+    font-size:0.95rem; outline:none;
+  }
+  .odometer{
+    background:var(--gauge); border:1px solid var(--gauge-line); border-radius:10px; padding:1.6rem;
+    display:flex; flex-direction:column; gap:1.1rem; justify-content:center;
+  }
+  .odo-line{ display:flex; justify-content:space-between; align-items:baseline; gap:1rem; }
+  .odo-line .lbl{ font-family:var(--mono); font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--gauge-text-dim); }
+  .odo-line .num{ font-family:var(--mono); font-size:1.7rem; color:var(--amber); font-weight:600; font-variant-numeric: tabular-nums; }
+  .odo-line.cost .num{ color:var(--signal); font-size:2rem; }
+  .odometer .fine{ font-size:0.8rem; color:var(--gauge-text-dim); margin:0; }
+
+  /* ---------- model comparison table ---------- */
+  .model-table-wrap{
+    margin-top:2.2rem; background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:1.4rem 1.4rem 1.2rem;
+  }
+  .model-table-wrap h3{ font-family:var(--body-f); font-weight:600; font-size:1.05rem; margin-bottom:0.9rem; }
+  .table-scroll{ overflow-x:auto; }
+  .model-table{ width:100%; border-collapse:collapse; font-size:0.87rem; min-width:480px; }
+  .model-table th{
+    text-align:left; font-family:var(--mono); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em;
+    color:var(--ink-dim); padding:0.5rem 0.7rem; border-bottom:1px solid var(--line);
+  }
+  .model-table td{ padding:0.55rem 0.7rem; border-bottom:1px solid var(--line); color:var(--ink); }
+  .model-table tr:last-child td{ border-bottom:none; }
+  .model-table td.price{ font-family:var(--mono); color:var(--copper); }
+  .tier-badge{
+    font-family:var(--mono); font-size:0.68rem; text-transform:uppercase; letter-spacing:0.04em;
+    padding:0.15rem 0.45rem; border-radius:3px; background:rgba(181,101,47,0.12); color:var(--copper); white-space:nowrap;
+  }
+
+  /* ---------- levers ---------- */
+  .lever-grid{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1.8rem; }
+  .lever-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:1.1rem 1.2rem;
+    display:flex; flex-direction:column; gap:0.5rem;
+  }
+  .lever-top{ display:flex; justify-content:space-between; align-items:center; gap:0.6rem; }
+  .lever-top h3{ font-family:var(--body-f); font-weight:600; font-size:1rem; color:var(--ink); }
+  .lever-card p{ font-size:0.88rem; color:var(--ink-dim); margin:0; }
+  .lever-tag{ font-family:var(--mono); font-size:0.75rem; color:var(--copper); }
+
+  .lever-group-head{
+    font-family:var(--mono); font-size:0.78rem; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--ink); margin:2rem 0 0; display:flex; align-items:center; gap:0.7rem; font-weight:600;
+  }
+  .lever-group-head:first-of-type{ margin-top:1.8rem; }
+  .lever-group-head .pillmark{
+    font-family:var(--body-f); font-size:0.68rem; letter-spacing:0.03em; text-transform:none; font-weight:600;
+    padding:0.15rem 0.5rem; border-radius:20px; color:#fff;
+  }
+  .pillmark.you{ background:var(--copper); }
+  .pillmark.build{ background:var(--dusk); }
+  .lever-group-head + .lever-grid{ margin-top:0.9rem; }
+
+  /* ---------- footer ---------- */
+  footer{ padding:4rem 0 5rem; }
+  footer ul{ padding-left:1.1rem; color:var(--ink-dim); }
+  footer li{ margin-bottom:0.6rem; }
+  footer .closing{ margin-top:2rem; font-family:var(--display); font-style:italic; font-size:1.2rem; color:var(--ink); max-width:46ch; }
+
+  @media (max-width:700px){
+    .stat-row{ grid-template-columns:1fr; }
+    .io-split{ grid-template-columns:1fr; }
+    .calc-grid{ grid-template-columns:1fr; }
+    .lever-grid{ grid-template-columns:1fr; }
+    section{ padding:3.2rem 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    *{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <p class="eyebrow">A field guide for leaders</p>
+    <h1>Tokens are the currency your AI runs on.</h1>
+    <p class="sub">Every prompt you send and every reply you get back is measured, counted, and billed in tokens. Type something below and watch it happen.</p>
+
+    <div class="demo-box">
+      <label for="heroInput">Try it — type a prompt you might actually send</label>
+      <textarea id="heroInput">Please summarize the Q3 board deck and flag any risks.</textarea>
+      <div class="chip-field" id="chipField"></div>
+      <div class="demo-stats">
+        <span><b id="tokenCount">0</b> tokens</span>
+        <span><b id="wordCount">0</b> words</span>
+        <span><b id="ratioStat">0</b> tokens per word</span>
+      </div>
+    </div>
+    <p class="caption">This is a simplified, illustrative tokenizer built for this page — it shows the mechanics, not the exact algorithm of any specific model.</p>
+  </section>
+
+  <!-- WHAT IS A TOKEN -->
+  <section id="what">
+    <p class="eyebrow">First principles</p>
+    <h2 style="font-size:clamp(1.6rem,3.4vw,2.1rem); margin-bottom:0.9rem;">A token isn't a word. It's a chunk.</h2>
+    <p class="lede">Models don't read in letters or whole words — they read in chunks called tokens: sometimes a whole short word, sometimes just a fragment like "-ing" or "un-", sometimes a single punctuation mark. That's how the same system handles any language, typo, or made-up product name without breaking.</p>
+
+    <div class="stat-row">
+      <div class="stat-card"><span class="num">≈ 4</span><span class="lbl">characters per token, on average, in English</span></div>
+      <div class="stat-card"><span class="num">≈ 750</span><span class="lbl">words is roughly 1,000 tokens</span></div>
+      <div class="stat-card"><span class="num">≈ 550</span><span class="lbl">tokens for one typical page of text</span></div>
+    </div>
+  </section>
+
+  <!-- WHERE TOKENS GET USED -->
+  <section id="usage">
+    <p class="eyebrow">The part that matters</p>
+    <h2 style="font-size:clamp(1.6rem,3.4vw,2.1rem); margin-bottom:0.9rem;">Two sides get counted — and one costs more.</h2>
+    <p class="lede">Every exchange has two halves. What you send in, and what the AI writes back. Both are billed in tokens — but the reply is almost always the expensive half, and it's the one most people forget to think about.</p>
+
+    <div class="io-split">
+      <div class="io-panel in">
+        <div class="io-tag">● Input — what you send</div>
+        <h3>Your question &amp; any files</h3>
+        <p>Everything you type or upload. A one-line question is cheap; a 50-page report attached to it is not.</p>
+        <span class="price-flag">Lower price per token</span>
+      </div>
+      <div class="io-panel out">
+        <div class="io-tag">● Output — what comes back</div>
+        <h3>The AI's full answer</h3>
+        <p>Every word the AI writes is billed too — and a long, thorough reply can easily outweigh the short question that prompted it.</p>
+        <span class="price-flag">Higher price per token</span>
+      </div>
+    </div>
+
+    <div class="io-callout">
+      <span class="big">4–5×</span>
+      <span class="txt">On most models today, each <b>output</b> token costs several times more than an input token. That's why a chatty, over-explained answer is where cost quietly piles up — and why "just give me the bottom line" is the single easiest saving anyone can make.</span>
+    </div>
+    <p class="caption">Exact multiples vary by model — see the comparison table below — but output always costs more than input.</p>
+  </section>
+
+  <!-- COST CALCULATOR -->
+  <section id="cost">
+    <p class="eyebrow">What it costs you<span class="example-tag">Example</span></p>
+    <h2 style="font-size:clamp(1.6rem,3.4vw,2.1rem); margin-bottom:0.9rem;">Put your own numbers in.</h2>
+    <p class="lede">Cost is simple in structure, even if the totals surprise people: tokens moved, multiplied by a rate. The numbers below are illustrative — swap in your team's real usage to see the shape of your own bill.</p>
+
+    <div class="calc-grid">
+      <div>
+        <div class="controls-row" style="flex-direction:column; align-items:stretch; gap:1.3rem; margin-top:1.6rem;">
+          <div class="control">
+            <label>People using AI daily: <span class="val" id="peopleVal">500</span></label>
+            <input type="range" id="peopleSlider" min="1" max="5000" value="500">
+          </div>
+          <div class="control">
+            <label>Conversations per person, per day: <span class="val" id="convoVal">20</span></label>
+            <input type="range" id="convoSlider" min="1" max="80" value="20">
+            <p class="slider-guidance">One conversation = one task or thread, not one message. Rough anchors: <b>light user ~5</b>, <b>regular ~20</b>, <b>heavy 50+</b> (developers, analysts using AI all day).</p>
+          </div>
+          <div class="control">
+            <label>Avg tokens per conversation: <span class="val" id="avgTokVal">15,000</span></label>
+            <input type="range" id="avgTokSlider" min="500" max="100000" step="500" value="15000">
+            <p class="slider-guidance">Nobody thinks in tokens — think in shape of task. <b>~1,500</b> = quick back-and-forth. <b>~5,000</b> = typical drafting or Q&amp;A. <b>~15,000</b> = a page or two attached, discussed. <b>~60,000+</b> = a real document uploaded and worked through — it rides along on every follow-up, so this compounds fast.</p>
+          </div>
+          <div class="control">
+            <label for="modelSelect">Model</label>
+            <select id="modelSelect">
+              <optgroup label="Budget / fast">
+                <option data-in="0.20" data-out="1.25">GPT-5.4 nano — OpenAI</option>
+                <option data-in="0.25" data-out="1.50">Gemini 3.1 Flash-Lite — Google</option>
+                <option data-in="1.00" data-out="5.00">Claude Haiku 4.5 — Anthropic</option>
+              </optgroup>
+              <optgroup label="Balanced / everyday">
+                <option data-in="1.50" data-out="9.00">Gemini 3.5 Flash — Google</option>
+                <option data-in="2.00" data-out="10.00" selected>Claude Sonnet 5 — Anthropic</option>
+                <option data-in="2.50" data-out="15.00">GPT-5.4 — OpenAI</option>
+              </optgroup>
+              <optgroup label="Frontier / premium">
+                <option data-in="2.00" data-out="12.00">Gemini 3.1 Pro — Google</option>
+                <option data-in="5.00" data-out="25.00">Claude Opus 4.8 — Anthropic</option>
+                <option data-in="5.00" data-out="30.00">GPT-5.5 — OpenAI</option>
+              </optgroup>
+              <option value="custom">Custom rate…</option>
+            </select>
+            <div class="rate-input" id="rateInputWrap" style="display:none; margin-top:0.3rem;">
+              <span>$</span>
+              <input type="number" id="rateInput" value="3" min="0.1" step="0.5">
+              <span>/ 1M tokens</span>
+            </div>
+            <p class="caption" id="rateNote" style="margin-top:0.2rem;">—</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="odometer">
+        <div class="odo-line"><span class="lbl">Monthly tokens</span><span class="num" id="monthlyTokens">0</span></div>
+        <div class="odo-line cost"><span class="lbl">Monthly cost</span><span class="num" id="monthlyCost">$0</span></div>
+        <p class="fine">Assumes 22 working days per month and a reply-heavy 30/70 input/output mix. Illustrative math — swap in your own usage logs for a real forecast.</p>
+      </div>
+    </div>
+
+    <div class="model-table-wrap">
+      <h3>How common models compare, per million tokens</h3>
+      <div class="table-scroll">
+        <table class="model-table">
+          <thead><tr><th>Tier</th><th>Model</th><th>Vendor</th><th>Input</th><th>Output</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tier-badge">Budget</span></td><td>GPT-5.4 nano</td><td>OpenAI</td><td class="price">$0.20</td><td class="price">$1.25</td></tr>
+            <tr><td><span class="tier-badge">Budget</span></td><td>Gemini 3.1 Flash-Lite</td><td>Google</td><td class="price">$0.25</td><td class="price">$1.50</td></tr>
+            <tr><td><span class="tier-badge">Budget</span></td><td>Claude Haiku 4.5</td><td>Anthropic</td><td class="price">$1.00</td><td class="price">$5.00</td></tr>
+            <tr><td><span class="tier-badge">Balanced</span></td><td>Gemini 3.5 Flash</td><td>Google</td><td class="price">$1.50</td><td class="price">$9.00</td></tr>
+            <tr><td><span class="tier-badge">Balanced</span></td><td>Claude Sonnet 5</td><td>Anthropic</td><td class="price">$2.00</td><td class="price">$10.00</td></tr>
+            <tr><td><span class="tier-badge">Balanced</span></td><td>GPT-5.4</td><td>OpenAI</td><td class="price">$2.50</td><td class="price">$15.00</td></tr>
+            <tr><td><span class="tier-badge">Frontier</span></td><td>Gemini 3.1 Pro</td><td>Google</td><td class="price">$2.00</td><td class="price">$12.00</td></tr>
+            <tr><td><span class="tier-badge">Frontier</span></td><td>Claude Opus 4.8</td><td>Anthropic</td><td class="price">$5.00</td><td class="price">$25.00</td></tr>
+            <tr><td><span class="tier-badge">Frontier</span></td><td>GPT-5.5</td><td>OpenAI</td><td class="price">$5.00</td><td class="price">$30.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption">List prices in USD, before caching or batch discounts. Snapshot as of July 2026 — every vendor changes these often, so confirm current rates with <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank" rel="noopener">Anthropic</a>, <a href="https://openai.com/api/pricing/" target="_blank" rel="noopener">OpenAI</a>, or <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">Google</a> before budgeting.</p>
+    </div>
+  </section>
+
+  <!-- LEVERS -->
+  <section id="levers">
+    <p class="eyebrow">Where leaders actually have leverage</p>
+    <h2 style="font-size:clamp(1.6rem,3.4vw,2.1rem); margin-bottom:0.9rem;">Two kinds of savings.</h2>
+    <p class="lede">Some of this is everyday habit anyone can pick up today. The rest is infrastructure work — controls worth building once so savings apply automatically for everyone. The percentages are illustrative, but they stack, and they're ordered here by how much they typically move the number.</p>
+
+    <div class="lever-group-head"><span class="pillmark you">Anyone can do today</span> habits that trim tokens</div>
+    <div class="lever-grid">
+      <div class="lever-card">
+        <div class="lever-top">
+          <h3>Start fresh for a new topic</h3>
+        </div>
+        <p>Every message drags the whole prior chat along. Opening a new conversation for an unrelated task drops that dead weight.</p>
+        <span class="lever-tag">~20% lower</span>
+      </div>
+      <div class="lever-card">
+        <div class="lever-top">
+          <h3>Ask for shorter answers</h3>
+        </div>
+        <p>Replies are usually the priciest part. A quick "keep it brief" or "just the bottom line" cuts the most expensive tokens.</p>
+        <span class="lever-tag">~15% lower</span>
+      </div>
+      <div class="lever-card">
+        <div class="lever-top">
+          <h3>Attach only what's needed</h3>
+        </div>
+        <p>A whole 80-page report rides along on every turn once attached. Share the relevant section instead of the entire file.</p>
+        <span class="lever-tag">~10% lower</span>
+      </div>
+    </div>
+
+    <div class="lever-group-head"><span class="pillmark build">Infrastructure controls</span> worth building once, save automatically</div>
+    <div class="lever-grid">
+      <div class="lever-card">
+        <div class="lever-top">
+          <h3>Right-size the model automatically</h3>
+        </div>
+        <p>Route routine tasks to a smaller, cheaper model and reserve the top model for work that truly needs it — without users having to choose.</p>
+        <span class="lever-tag">~40% lower, on routine work</span>
+      </div>
+      <div class="lever-card">
+        <div class="lever-top">
+          <h3>Trim history behind the scenes</h3>
+        </div>
+        <p>Automatically summarize or drop old turns so long conversations don't keep resending everything from the beginning.</p>
+        <span class="lever-tag">~25% lower</span>
+      </div>
+      <div class="lever-card">
+        <div class="lever-top">
+          <h3>Reuse repeated context (caching)</h3>
+        </div>
+        <p>The same setup and reference documents get sent on every call. Caching lets the system reuse them at a fraction of the price instead of paying for them again each time.</p>
+        <span class="lever-tag">~20% lower</span>
+      </div>
+      <div class="lever-card">
+        <div class="lever-top">
+          <h3>Batch the non-urgent work</h3>
+        </div>
+        <p>Work that doesn't need an instant answer can run in bulk, asynchronously, at roughly half the real-time rate.</p>
+        <span class="lever-tag">~10% lower</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  // ---------- tokenizer (illustrative approximation) ----------
+  function approxTokenize(text){
+    if(!text) return [];
+    const pieces = text.match(/[A-Za-z0-9]+|[^\sA-Za-z0-9]+|\s+/g) || [];
+    const tokens = [];
+    pieces.forEach(piece => {
+      if(/^\s+$/.test(piece)) return;
+      if(piece.length <= 4){ tokens.push(piece); return; }
+      let i = 0;
+      while(i < piece.length){
+        const len = Math.min(4, piece.length - i);
+        tokens.push(piece.slice(i, i+len));
+        i += len;
+      }
+    });
+    return tokens;
+  }
+
+  // ---------- hero demo ----------
+  const heroInput = document.getElementById('heroInput');
+  const chipField = document.getElementById('chipField');
+  const tokenCountEl = document.getElementById('tokenCount');
+  const wordCountEl = document.getElementById('wordCount');
+  const ratioStatEl = document.getElementById('ratioStat');
+  let lastHeroCount = 0;
+
+  function renderHero(){
+    const text = heroInput.value;
+    const tokens = approxTokenize(text);
+    chipField.innerHTML = tokens.map((t,i) => `<span class="token-chip tk-c${i%4}">${t.replace(/</g,'&lt;')}</span>`).join('');
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    tokenCountEl.textContent = tokens.length;
+    wordCountEl.textContent = words;
+    ratioStatEl.textContent = words ? (tokens.length/words).toFixed(2) : '0';
+    lastHeroCount = tokens.length;
+  }
+  heroInput.addEventListener('input', renderHero);
+
+  // ---------- cost calculator ----------
+  const peopleSlider = document.getElementById('peopleSlider');
+  const peopleVal = document.getElementById('peopleVal');
+  const convoSlider = document.getElementById('convoSlider');
+  const convoVal = document.getElementById('convoVal');
+  const avgTokSlider = document.getElementById('avgTokSlider');
+  const avgTokVal = document.getElementById('avgTokVal');
+  const modelSelect = document.getElementById('modelSelect');
+  const rateInputWrap = document.getElementById('rateInputWrap');
+  const rateInput = document.getElementById('rateInput');
+  const rateNote = document.getElementById('rateNote');
+  const monthlyTokensEl = document.getElementById('monthlyTokens');
+  const monthlyCostEl = document.getElementById('monthlyCost');
+
+  const IN_WEIGHT = 0.3, OUT_WEIGHT = 0.7; // reply-heavy mix: replies are usually the pricier side
+
+  function getEffectiveRate(){
+    if(modelSelect.value === 'custom'){
+      return parseFloat(rateInput.value) || 0;
+    }
+    const opt = modelSelect.selectedOptions[0];
+    const inR = parseFloat(opt.dataset.in), outR = parseFloat(opt.dataset.out);
+    return inR*IN_WEIGHT + outR*OUT_WEIGHT;
+  }
+
+  function syncModelUI(){
+    const isCustom = modelSelect.value === 'custom';
+    rateInputWrap.style.display = isCustom ? 'flex' : 'none';
+    if(isCustom){
+      rateNote.textContent = 'Enter your own negotiated or published rate per million tokens.';
+    } else {
+      const rate = getEffectiveRate();
+      rateNote.textContent = `Blended at $${rate.toFixed(2)} / 1M tokens — assumes a 30% input / 70% output mix.`;
+    }
+  }
+
+  function updateCalc(bump){
+    const people = parseInt(peopleSlider.value,10);
+    const convos = parseInt(convoSlider.value,10);
+    const avgTok = parseInt(avgTokSlider.value,10);
+    const rate = getEffectiveRate();
+
+    peopleVal.textContent = people;
+    convoVal.textContent = convos;
+    avgTokVal.textContent = avgTok.toLocaleString('en-US');
+
+    const monthlyTokens = people * convos * avgTok * 22;
+    const monthlyCost = (monthlyTokens/1000000) * rate;
+
+    monthlyTokensEl.textContent = Math.round(monthlyTokens).toLocaleString('en-US');
+    monthlyCostEl.textContent = '$' + monthlyCost.toLocaleString('en-US', {maximumFractionDigits:0});
+  }
+  [peopleSlider, convoSlider, avgTokSlider].forEach(el => el.addEventListener('input', () => updateCalc(true)));
+  rateInput.addEventListener('input', () => updateCalc(true));
+  modelSelect.addEventListener('change', () => { syncModelUI(); updateCalc(true); });
+
+  // ---------- init ----------
+  function init(){
+    renderHero();
+    syncModelUI();
+    updateCalc(false);
+  }
+  init();
+</script>
+
+</body>
+</html>
